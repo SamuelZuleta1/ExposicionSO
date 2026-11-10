@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pruebas del motor</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="pruebas">
+    <section class="tarjeta">
+      <h1>Pruebas del motor</h1>
+      <p id="resumen" class="frase-final"></p>
+      <ul id="lista" class="lista-pruebas"></ul>
+      <p><a href="index.html">← Volver a la simulación</a></p>
+    </section>
+  </main>
+  <script src="engine.js"></script>
+  <script src="tests.js"></script>
+  <script>
+    (function () {
+      var r = window.RESULTADOS_PRUEBAS;
+      var lista = document.getElementById('lista');
+      r.resultados.forEach(function (t) {
+        var li = document.createElement('li');
+        li.className = t.ok ? 'ok' : 'mal';
+        li.textContent = (t.ok ? '✔ ' : '✘ ') + t.nombre +
+          (t.ok ? '' : ' → obtenido ' + JSON.stringify(t.obtenido) + ', esperado ' + JSON.stringify(t.esperado));
+        lista.appendChild(li);
+      });
+      var res = document.getElementById('resumen');
+      res.textContent = r.aprobadas + ' de ' + r.resultados.length + ' pruebas pasan.';
+      res.className = 'frase-final ' + (r.aprobadas === r.resultados.length ? 'gana' : 'pierde');
+    })();
+  </script>
+</body>
+</html>

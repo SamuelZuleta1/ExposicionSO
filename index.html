@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LRU con bits — paso a paso</title>
+  <meta name="description" content="Simulación visual de LRU apoyado con bits de referencia (historia y contador) para Sistemas Operativos.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="saltar" href="#principal">Saltar al contenido</a>
+
+  <header class="encabezado">
+    <div class="titulo">
+      <h1>LRU con bits</h1>
+    </div>
+
+    <form class="config" id="config" onsubmit="return false" aria-label="Configuración">
+      <label class="campo">
+        <span>Marcos</span>
+        <select id="selMarcos">
+          <option>1</option><option>2</option><option selected>3</option>
+          <option>4</option><option>5</option><option>6</option>
+        </select>
+      </label>
+      <label class="campo">
+        <span>Configuración</span>
+        <select id="selModo">
+          <option value="puro">LRU puro (0 bits)</option>
+          <option value="mia" selected>Mi configuración (k=2, c=2)</option>
+          <option value="custom">Personalizada…</option>
+        </select>
+      </label>
+      <div class="personalizada" id="personalizada" hidden>
+        <label class="campo">
+          <span>k (historia)</span>
+          <select id="selK"><option>0</option><option selected>2</option><option>3</option><option>4</option></select>
+        </label>
+        <label class="campo">
+          <span>c (contador)</span>
+          <select id="selC"><option>0</option><option>1</option><option selected>2</option><option>3</option></select>
+        </label>
+        <label class="campo">
+          <span>Orden de reglas</span>
+          <select id="selOrden">
+            <option value="HCL" selected>Historia → Contador → LRU</option>
+            <option value="CHL">Contador → Historia → LRU</option>
+          </select>
+        </label>
+      </div>
+    </form>
+  </header>
+
+  <main id="principal">
+    <!-- Secuencia -->
+    <section class="tarjeta secuencia" aria-labelledby="tSecuencia">
+      <div class="fila-titulo">
+        <h2 id="tSecuencia">Secuencia de referencias</h2>
+        <div class="semilla" id="semillaInfo"></div>
+        <div class="acciones-seq">
+          <button class="btn" id="btnNueva" type="button" title="Atajo: N">Nueva secuencia</button>
+          <button class="enlace punto" id="btnProfesor" type="button" title="Usar la secuencia del profesor" aria-label="Usar la secuencia del profesor">.</button>
+        </div>
+      </div>
+      <ol class="tira" id="tira" aria-label="Referencias"></ol>
+    </section>
+
+    <!-- Controles -->
+    <section class="tarjeta controles" aria-label="Controles de la simulación">
+      <div class="grupo">
+        <button class="btn" id="btnReiniciar" type="button">Reiniciar</button>
+        <button class="btn" id="btnAnterior" type="button" title="Atajo: ←">Anterior</button>
+        <button class="btn primario" id="btnPlay" type="button" title="Atajo: espacio">Reproducir</button>
+        <button class="btn" id="btnSiguiente" type="button" title="Atajo: →">Siguiente</button>
+      </div>
+      <div class="grupo segmentado" role="radiogroup" aria-label="Velocidad">
+        <button type="button" role="radio" data-vel="lenta" aria-checked="false">Lenta</button>
+        <button type="button" role="radio" data-vel="normal" aria-checked="true">Normal</button>
+        <button type="button" role="radio" data-vel="rapida" aria-checked="false">Rápida</button>
+      </div>
+      <div class="grupo marcador" aria-live="polite">
+        <span id="pasoInfo">Paso 0 de 16</span>
+        <span class="dato" id="fallosInfo">0 fallos</span>
+      </div>
+      <div class="grupo">
+        <label class="casilla">
+          <input type="checkbox" id="chkAdivina">
+          Modo adivina
+        </label>
+        <span class="dato" id="adivinaInfo" hidden>Adivinaste 0 de 0</span>
+      </div>
+    </section>
+
+    <!-- Paneles centrales -->
+    <div class="paneles">
+      <section class="tarjeta panel" aria-labelledby="tPila">
+        <h2 id="tPila">Pila LRU</h2>
+        <div class="eje arriba">más reciente</div>
+        <div class="pila" id="pila"></div>
+        <div class="eje abajo">menos reciente</div>
+      </section>
+
+      <section class="tarjeta panel" aria-labelledby="tBits">
+        <h2 id="tBits">Registro de bits</h2>
+        <p class="ayuda" id="ayudaBits">H se corre a la derecha en cada referencia; el bit de la izquierda se pone en 1 si la página se usa.</p>
+        <div class="registro" id="registro"></div>
+      </section>
+
+      <section class="tarjeta panel" aria-labelledby="tDecision">
+        <h2 id="tDecision">Decisión</h2>
+        <div class="decision" id="decision" aria-live="polite"></div>
+      </section>
+    </div>
+
+    <!-- Matriz -->
+    <section class="tarjeta" aria-labelledby="tMatriz">
+      <div class="fila-titulo">
+        <h2 id="tMatriz">Matriz paso a paso</h2>
+        <button class="btn derecha" id="btnCSV" type="button">Exportar CSV</button>
+      </div>
+      <div class="matriz-scroll">
+        <table class="matriz" id="matriz"></table>
+      </div>
+    </section>
+
+    <!-- Resultados -->
+    <section class="tarjeta resultados" aria-labelledby="tRes">
+      <h2 id="tRes">Resultados</h2>
+      <p class="frase-final" id="fraseFinal"></p>
+      <div class="res-grid">
+        <div>
+          <table class="tabla" id="tablaRes"></table>
+        </div>
+        <figure>
+          <figcaption>Fallos por algoritmo</figcaption>
+          <svg id="barras" viewBox="0 0 420 200" role="img" aria-label="Gráfica de barras de fallos"></svg>
+        </figure>
+        <figure>
+          <figcaption>Fallos según número de marcos</figcaption>
+          <svg id="lineas" viewBox="0 0 420 220" role="img" aria-label="Gráfica de fallos según marcos"></svg>
+        </figure>
+      </div>
+
+      <div class="cien">
+        <button class="btn primario" id="btn100" type="button">Probar 100 secuencias aleatorias</button>
+        <div id="res100" class="res100" aria-live="polite"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="pie">
+    Sistemas Operativos · Algoritmos de reemplazo de páginas · <a href="tests.html">Pruebas del motor</a>
+  </footer>
+
+  <script src="engine.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
