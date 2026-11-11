@@ -23,8 +23,7 @@
     seq: [], semilla: null, profesor: false, revelado: -1,
     marcos: 3, modo: 'mia', k: 2, c: 2, orden: 'HCL',
     pasos: [], paso: 0,
-    jugando: false, timer: null, vel: 'normal',
-    adivina: false, buenas: 0, total: 0, respondidas: {}, pregunta: null
+    jugando: false, timer: null, vel: 'normal'
   };
 
   /* ------------------------------------------------------------ */
@@ -91,8 +90,8 @@
   }
   function recalcular(volverACero) {
     E.pasos = M.simulate(E.seq, E.marcos, 'LRU_BITS', config());
-    E.respondidas = {}; E.pregunta = null; E.revelado = -1;
-    if (volverACero) { E.paso = 0; E.buenas = 0; E.total = 0; } // el puntaje es por secuencia
+    E.revelado = -1;
+    if (volverACero) E.paso = 0;
     E.paso = Math.min(E.paso, E.pasos.length);
     escribirURL();
     $('res100').innerHTML = '';
@@ -104,17 +103,7 @@
   /* Navegación                                                     */
   /* ------------------------------------------------------------ */
   function avanzar() {
-    if (E.pregunta !== null) return false;
     if (E.paso >= E.pasos.length) return false;
-    const sig = E.pasos[E.paso];
-    if (E.adivina && sig.decision.tipo === 'reemplazo' && !E.respondidas[E.paso]) {
-      E.pregunta = E.paso;
-      pausar();
-      renderDecision(true);
-      const b = document.querySelector('.opciones .btn');
-      if (b) b.focus({ preventScroll: true });
-      return false;
-    }
     E.paso++;
     E.revelado = -1;
     render(true);
@@ -122,13 +111,11 @@
   }
   function retroceder() {
     pausar();
-    E.pregunta = null;
     E.revelado = -1;
     if (E.paso > 0) { E.paso--; render(false); }
   }
   function saltar(n) {
     pausar();
-    E.pregunta = null;
     E.revelado = -1;
     E.paso = Math.max(0, Math.min(n, E.pasos.length));
     render(false);
@@ -160,17 +147,6 @@
     if (!st || st.decision.tipo !== 'reemplazo') return v.pausa;
     const animacionReglas = (st.decision.reglas.length * 0.9 + 1.3) * v.dur;
     return v.pausa + animacionReglas;
-  }
-
-  function responder(p) {
-    const i = E.pregunta;
-    if (i === null) return;
-    const correcta = E.pasos[i].sale;
-    E.respondidas[i] = { elegida: p, ok: p === correcta };
-    E.total++; if (p === correcta) E.buenas++;
-    E.pregunta = null;
-    E.paso = i + 1;
-    render(true);
   }
 
   /* ------------------------------------------------------------ */
@@ -232,10 +208,8 @@
     const f = st ? st.fallos : 0;
     $('fallosInfo').textContent = 'Fallos: ' + f;
     $('btnAnterior').disabled = E.paso === 0;
-    $('btnSiguiente').disabled = E.paso >= E.pasos.length || E.pregunta !== null;
+    $('btnSiguiente').disabled = E.paso >= E.pasos.length;
     $('btnPlay').textContent = E.jugando ? 'Pausar' : (E.paso >= E.pasos.length ? 'Repetir' : 'Reproducir');
-    $('adivinaInfo').hidden = !E.adivina;
-    $('adivinaInfo').textContent = 'Adivinaste ' + E.buenas + ' de ' + E.total;
     $('personalizada').hidden = E.modo !== 'custom';
   }
 
@@ -405,41 +379,11 @@
     cont.innerHTML = '';
     const d = dur();
 
-    if (E.pregunta !== null) {
-      const sig = E.pasos[E.pregunta];
-      const antes = E.pregunta > 0 ? E.pasos[E.pregunta - 1] : null;
-      const mem = antes ? antes.marcos.filter((p) => p !== null) : [];
-      const q = el('div', 'pregunta');
-      q.appendChild(el('p', 'titular', '¿Qué página sale?'));
-      q.appendChild(el('p', '', 'Llega la <b>' + sig.ref + '</b> y la memoria está llena.'));
-      const ops = el('div', 'opciones');
-      mem.forEach((p) => {
-        const b = el('button', 'btn', String(p));
-        b.type = 'button';
-        b.setAttribute('aria-label', 'Sale la ' + p);
-        b.addEventListener('click', () => responder(p));
-        ops.appendChild(b);
-      });
-      q.appendChild(ops);
-      q.appendChild(el('p', 'ayuda', hayBits()
-        ? 'Pista: antes de decidir, H se corre a la derecha. Aplica las reglas en orden.'
-        : 'Pista: LRU puro saca la de abajo de la pila.'));
-      cont.appendChild(q);
-      renderControles();
-      return;
-    }
-
     const st = pasoActual();
     if (!st) {
       cont.appendChild(el('p', 'titular', 'Memoria vacía.'));
       cont.appendChild(el('p', 'explica', 'Pulsa <b>Siguiente</b> o <b>Reproducir</b> para empezar.'));
       return;
-    }
-
-    const resp = E.respondidas[st.indice];
-    if (resp) {
-      cont.appendChild(el('p', 'veredicto ' + (resp.ok ? 'bien' : 'mal'),
-        resp.ok ? 'Bien: escogiste la ' + resp.elegida + '.' : 'No: escogiste la ' + resp.elegida + ', pero sale la ' + st.sale + '.'));
     }
 
     if (st.decision.tipo === 'acierto') {
@@ -738,12 +682,6 @@
     $('btn100').addEventListener('click', probar100);
     document.querySelectorAll('[data-vel]').forEach((b) => b.addEventListener('click', () => fijarVelocidad(b.dataset.vel)));
 
-    $('chkAdivina').addEventListener('change', (e) => {
-      E.adivina = e.target.checked;
-      E.buenas = 0; E.total = 0; E.respondidas = {}; E.pregunta = null;
-      render(false);
-    });
-
     $('selMarcos').addEventListener('change', (e) => {
       E.marcos = parseInt(e.target.value, 10);
       pausar();
@@ -771,12 +709,6 @@
       // Espacio sobre un botón, enlace o casilla de verificación conserva su acción normal
       // (activar ese control); el atajo de reproducir/pausar solo aplica fuera de ellos.
       if (e.key === ' ' && e.target.closest('button, a, input, [role="button"], [role="radio"]')) return;
-      if (E.pregunta !== null && /^[0-9]$/.test(e.key)) {
-        const p = +e.key;
-        const antes = E.pasos[E.pregunta - 1];
-        if (antes && antes.marcos.indexOf(p) !== -1) { e.preventDefault(); responder(p); }
-        return;
-      }
       if (e.key === 'ArrowRight') { e.preventDefault(); pausar(); avanzar(); }
       else if (e.key === 'ArrowLeft') { e.preventDefault(); retroceder(); }
       else if (e.key === ' ') { e.preventDefault(); alternar(); }

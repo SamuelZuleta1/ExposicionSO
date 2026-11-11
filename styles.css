@@ -93,8 +93,6 @@ select {
 .segmentado button + button { border-left: 1px solid var(--linea); }
 .segmentado button[aria-checked="true"] { background: var(--tinta); color: var(--papel); }
 
-.casilla { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.95rem; }
-.casilla input { width: 20px; height: 20px; margin: 0; accent-color: var(--tinta); }
 .dato { font-size: 0.95rem; }
 
 /* ---------- Secuencia ---------- */
@@ -209,15 +207,6 @@ select {
 @keyframes aparece { from { opacity: 0; } to { opacity: 1; } }
 @keyframes tacha { from { color: var(--tinta); text-decoration-color: transparent; } to { color: var(--tachado); text-decoration-color: currentColor; } }
 
-/* Modo adivina */
-.pregunta { border: 2px solid var(--linea); padding: 14px 16px; }
-.pregunta p { margin: 0 0 10px; }
-.pregunta .titular { font-size: 1.4rem; }
-.opciones { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
-.opciones .btn { font-family: var(--mono); font-size: 1.5rem; font-weight: bold; min-width: 64px; min-height: 52px; }
-.veredicto { margin: 0 0 6px; font-weight: bold; }
-.veredicto.bien { color: var(--verde); }
-.veredicto.mal { color: var(--rojo); }
 
 /* ---------- Matriz ---------- */
 .matriz-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
