@@ -56,17 +56,18 @@
     else if (cfg && /^k[0234]c[0123](HCL|CHL)$/.test(cfg)) {
       E.modo = 'custom'; E.k = +cfg[1]; E.c = +cfg[3]; E.orden = cfg.slice(4);
     }
-    if (q.get('secuencia') === 'profesor') { E.profesor = true; return; }
+    if (q.has('secuencia')) { E.profesor = true; return; } // ?secuencia (y el viejo ?secuencia=profesor)
     const s = parseInt(q.get('semilla'), 10);
     E.semilla = Number.isFinite(s) && s >= 0 ? s : M.semillaAleatoria();
   }
   function escribirURL() {
     const q = new URLSearchParams();
-    if (E.profesor) q.set('secuencia', 'profesor'); else q.set('semilla', E.semilla);
+    if (E.profesor) q.set('secuencia', ''); else q.set('semilla', E.semilla);
     if (E.marcos !== 3) q.set('marcos', E.marcos);
     if (E.modo === 'puro') q.set('config', 'puro');
     if (E.modo === 'custom') q.set('config', 'k' + E.k + 'c' + E.c + E.orden);
-    try { history.replaceState(null, '', '?' + q.toString()); } catch (e) { /* file:// en algunos navegadores */ }
+    const texto = q.toString().replace(/^secuencia=(&|$)/, 'secuencia$1'); // ?secuencia sin "="
+    try { history.replaceState(null, '', '?' + texto); } catch (e) { /* file:// en algunos navegadores */ }
   }
 
   /* ------------------------------------------------------------ */
