@@ -83,12 +83,6 @@
     cargarSecuencia();
     recalcular(true);
   }
-  function usarProfesor() {
-    pausar();
-    E.profesor = true;
-    cargarSecuencia();
-    recalcular(true);
-  }
   function recalcular(volverACero) {
     E.pasos = M.simulate(E.seq, E.marcos, 'LRU_BITS', config());
     E.respondidas = {}; E.pregunta = null;
@@ -220,8 +214,6 @@
       li.classList.toggle('actual', i === E.paso - 1);
       if (i === E.paso - 1) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current');
     });
-    $('semillaInfo').textContent = E.profesor ? 'Secuencia del profesor' : 'Semilla: ' + E.semilla;
-    $('btnProfesor').hidden = E.profesor;
   }
 
   function renderControles() {
@@ -329,9 +321,6 @@
     const cfg = config();
     const st = pasoActual();
     const prev = pasoPrevio();
-    $('ayudaBits').textContent = cfg.k > 0
-      ? 'En cada referencia H se corre a la derecha (el último bit se cae); si la página se usa, su bit izquierdo se pone en 1. C cuenta los aciertos (máx. ' + ((1 << cfg.c) - 1) + ').'
-      : (cfg.c > 0 ? 'Sin historia (k=0). C cuenta los aciertos de cada página.' : 'LRU puro: no hay bits; solo cuenta el orden de la pila.');
 
     let html = '<table><thead><tr><th>Marco</th><th>Página</th><th>H' + (cfg.k ? ' (' + cfg.k + ' bits)' : '') + '</th><th>C' + (cfg.c ? ' (' + cfg.c + ' bits)' : '') + '</th></tr></thead><tbody>';
     for (let j = 0; j < E.marcos; j++) {
@@ -379,6 +368,26 @@
   function sinPrefijo(frase) {
     const s = frase.replace(/^Sale la \d+: /, '');
     return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  // Desglose de un fallo: solo números (H antes, H desplazado, C).
+  function desglose(st) {
+    const cfg = config();
+    const caja = el('div', 'desglose');
+    const rH = st.decision.reglas.find((r) => r.clave === 'H');
+    const minH = rH ? rH.sobreviven : [];
+    const rC = st.decision.reglas.find((r) => r.clave === 'C');
+    const minC = rC ? rC.sobreviven : [];
+    let t = '<table class="tabla-h"><thead><tr><th>Pág.</th>' + (cfg.k > 0 ? '<th>H →</th>' : '') + (cfg.c > 0 ? '<th>C</th>' : '') + '</tr></thead><tbody>';
+    st.decision.previo.forEach((x) => {
+      const hmin = minH.indexOf(x.p) !== -1;
+      const cmin = minC.indexOf(x.p) !== -1 && (cfg.k === 0 || (minH.length > 1 && hmin));
+      t += '<tr class="' + (x.p === st.sale ? 'sale' : '') + '"><td class="pg">' + x.p + '</td>' +
+        (cfg.k > 0 ? '<td class="hd' + (hmin ? ' min' : '') + '">' + M.bitsATexto(x.H, cfg.k) + '</td>' : '') +
+        (cfg.c > 0 ? '<td class="hd' + (cmin ? ' min' : '') + '">' + x.C + '</td>' : '') + '</tr>';
+    });
+    caja.innerHTML = t + '</tbody></table>';
+    return caja;
   }
 
   function renderDecision(animar) {
@@ -442,34 +451,13 @@
 
     // Reemplazo
     cont.appendChild(el('p', 'titular', 'Sale la <span class="rojo">' + st.sale + '</span>.'));
-    cont.appendChild(el('p', 'explica', sinPrefijo(st.decision.frase)));
-    cont.appendChild(el('p', 'contexto', 'Fallo: llega la ' + st.ref + ' y la memoria está llena. Reglas, en orden:'));
-
-    const ol = el('ol', 'reglas');
-    const reglas = st.decision.reglas;
-    reglas.forEach((r, i) => {
-      const li = el('li');
-      const delay = animar ? i * d * 0.9 : 0;
-      li.style.animationDelay = delay + 'ms';
-      li.innerHTML = '<span class="nombre">' + (NOMBRE_CORTO[r.clave] || r.nombre) + '</span> (' + (CRITERIO[r.clave] || '') + '): ';
-      r.candidatas.forEach((p, k) => {
-        const fuera = r.sobreviven.indexOf(p) === -1;
-        const esVictima = i === reglas.length - 1 && p === st.sale;
-        const f = el('span', 'ficha' + (fuera ? ' tachada' : '') + (esVictima ? ' victima' : ''),
-          p + '<span class="v">' + valorCorto(r, p) + '</span>');
-        if (fuera) f.style.animationDelay = (delay + (animar ? d * 0.5 : 0)) + 'ms';
-        if (k > 0) li.appendChild(document.createTextNode(', '));
-        li.appendChild(f);
-      });
-      ol.appendChild(li);
-    });
-    cont.appendChild(ol);
+    if (hayBits()) cont.appendChild(desglose(st));
 
     if (hayBits()) {
       const c = el('p', 'contraste', st.lruSacaria !== st.sale
         ? 'LRU puro habría sacado la ' + st.lruSacaria + ', la de abajo de la pila. Aquí los bits cambian la decisión.'
         : 'LRU puro habría sacado la misma.');
-      c.style.animationDelay = (animar ? reglas.length * d * 0.9 : 0) + 'ms';
+      c.style.animationDelay = (animar ? st.decision.reglas.length * d * 0.9 : 0) + 'ms';
       cont.appendChild(c);
     }
   }
@@ -718,7 +706,6 @@
 
   function enlazar() {
     $('btnNueva').addEventListener('click', nuevaSecuencia);
-    $('btnProfesor').addEventListener('click', usarProfesor);
     $('btnReiniciar').addEventListener('click', reiniciar);
     $('btnAnterior').addEventListener('click', retroceder);
     $('btnSiguiente').addEventListener('click', () => { pausar(); avanzar(); });

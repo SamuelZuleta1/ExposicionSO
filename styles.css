@@ -84,8 +84,6 @@ select {
 .btn.primario:hover { background: #333; }
 .derecha { margin-left: auto; }
 .enlace { font: inherit; background: none; border: 0; color: var(--tinta); text-decoration: underline; cursor: pointer; padding: 4px; }
-/* Enlace discreto a la secuencia del profesor: solo un punto */
-.enlace.punto { text-decoration: none; font-weight: bold; font-size: 1.2rem; line-height: 1; padding: 6px 8px; color: var(--tenue); }
 
 .segmentado { display: inline-flex; border: 1px solid var(--linea); }
 .segmentado button {
@@ -100,7 +98,6 @@ select {
 .dato { font-size: 0.95rem; }
 
 /* ---------- Secuencia ---------- */
-.semilla { font-family: var(--mono); font-size: 0.85rem; color: var(--tenue); }
 .acciones-seq { display: flex; align-items: center; gap: 6px; margin-left: auto; }
 .tira {
   list-style: none; margin: 0; padding: 0 0 22px;
@@ -315,3 +312,18 @@ svg .rejilla { stroke: #dddddd; stroke-width: 1; }
 }
 
 .resultados[hidden] { display: none; }
+
+/* Desglose del fallo */
+.desglose { border-left: 3px solid var(--linea); padding: 4px 0 4px 12px; margin: 8px 0 12px; font-size: 0.95rem; }
+.desglose .sub { font-weight: bold; margin: 6px 0 2px; }
+.desglose ul { list-style: none; margin: 0; padding: 0; font-family: var(--mono); font-size: 0.9rem; display: grid; gap: 2px; }
+.desglose .res { font-weight: bold; color: var(--rojo); }
+
+.tabla-h { border-collapse: collapse; font-size: 0.9rem; margin: 4px 0 8px; }
+.tabla-h th { font-weight: normal; color: var(--tenue); text-align: left; padding: 2px 14px 4px 0; border-bottom: 1px solid var(--linea); }
+.tabla-h td { padding: 4px 14px 4px 0; font-family: var(--mono); border-bottom: 1px solid var(--linea-suave); }
+.tabla-h .pg { font-weight: bold; }
+.tabla-h .tenue { color: var(--tenue); }
+.tabla-h .hd.min { background: var(--marca); font-weight: bold; }
+.tabla-h .nota { font-family: inherit; color: var(--tenue); }
+.tabla-h tr.sale .nota, .tabla-h tr.sale .pg { color: var(--rojo); }

@@ -102,7 +102,8 @@
           });
           sale = eleccion.victima;
           posicion = marcos.indexOf(sale);
-          decision = { tipo: 'reemplazo', reglas: eleccion.reglas, frase: eleccion.frase };
+          decision = { tipo: 'reemplazo', reglas: eleccion.reglas, frase: eleccion.frase,
+            previo: enMemoria.map(function (p) { return { p: p, H: H[p], C: C[p] }; }) };
           delete H[sale]; delete C[sale]; delete ultimoUso[sale]; delete entrada[sale];
         }
         marcos[posicion] = ref;
