@@ -327,3 +327,6 @@ svg .rejilla { stroke: #dddddd; stroke-width: 1; }
 .tabla-h .hd.min { background: var(--marca); font-weight: bold; }
 .tabla-h .nota { font-family: inherit; color: var(--tenue); }
 .tabla-h tr.sale .nota, .tabla-h tr.sale .pg { color: var(--rojo); }
+
+.semilla { font-family: var(--mono); font-size: 0.85rem; color: var(--tenue); }
+.enlace.punto { text-decoration: none; font-weight: bold; font-size: 1.2rem; line-height: 1; padding: 6px 8px; color: var(--tenue); }

@@ -83,6 +83,12 @@
     cargarSecuencia();
     recalcular(true);
   }
+  function usarProfesor() {
+    pausar();
+    E.profesor = true;
+    cargarSecuencia();
+    recalcular(true);
+  }
   function recalcular(volverACero) {
     E.pasos = M.simulate(E.seq, E.marcos, 'LRU_BITS', config());
     E.respondidas = {}; E.pregunta = null;
@@ -214,6 +220,7 @@
       li.classList.toggle('actual', i === E.paso - 1);
       if (i === E.paso - 1) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current');
     });
+    $('btnProfesor').hidden = E.profesor;
   }
 
   function renderControles() {
@@ -706,6 +713,7 @@
 
   function enlazar() {
     $('btnNueva').addEventListener('click', nuevaSecuencia);
+    $('btnProfesor').addEventListener('click', usarProfesor);
     $('btnReiniciar').addEventListener('click', reiniciar);
     $('btnAnterior').addEventListener('click', retroceder);
     $('btnSiguiente').addEventListener('click', () => { pausar(); avanzar(); });
