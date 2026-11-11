@@ -184,6 +184,8 @@
     renderRegistro(animar);
     renderDecision(animar);
     renderMatriz();
+    // Los resultados solo aparecen cuando el algoritmo ya procesó toda la secuencia.
+    $('resultados').hidden = E.paso < E.pasos.length;
   }
 
   function el(tag, cls, html) {
