@@ -330,3 +330,6 @@ svg .rejilla { stroke: #dddddd; stroke-width: 1; }
 
 .semilla { font-family: var(--mono); font-size: 0.85rem; color: var(--tenue); }
 .enlace.punto { text-decoration: none; font-weight: bold; font-size: 1.2rem; line-height: 1; padding: 6px 8px; color: var(--tenue); }
+
+.fila-desglose { display: flex; align-items: center; gap: 12px; }
+.btn.flecha { min-width: 44px; min-height: 44px; font-size: 1.3rem; padding: 0 10px; }

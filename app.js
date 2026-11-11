@@ -20,7 +20,7 @@
   const reducirMovimiento = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const E = {
-    seq: [], semilla: null, profesor: false,
+    seq: [], semilla: null, profesor: false, revelado: -1,
     marcos: 3, modo: 'mia', k: 2, c: 2, orden: 'HCL',
     pasos: [], paso: 0,
     jugando: false, timer: null, vel: 'normal',
@@ -91,7 +91,7 @@
   }
   function recalcular(volverACero) {
     E.pasos = M.simulate(E.seq, E.marcos, 'LRU_BITS', config());
-    E.respondidas = {}; E.pregunta = null;
+    E.respondidas = {}; E.pregunta = null; E.revelado = -1;
     if (volverACero) { E.paso = 0; E.buenas = 0; E.total = 0; } // el puntaje es por secuencia
     E.paso = Math.min(E.paso, E.pasos.length);
     escribirURL();
@@ -116,17 +116,20 @@
       return false;
     }
     E.paso++;
+    E.revelado = -1;
     render(true);
     return true;
   }
   function retroceder() {
     pausar();
     E.pregunta = null;
+    E.revelado = -1;
     if (E.paso > 0) { E.paso--; render(false); }
   }
   function saltar(n) {
     pausar();
     E.pregunta = null;
+    E.revelado = -1;
     E.paso = Math.max(0, Math.min(n, E.pasos.length));
     render(false);
   }
@@ -378,7 +381,7 @@
   }
 
   // Desglose de un fallo: solo números (H antes, H desplazado, C).
-  function desglose(st) {
+  function desglose(st, revelar) {
     const cfg = config();
     const caja = el('div', 'desglose');
     const rH = st.decision.reglas.find((r) => r.clave === 'H');
@@ -388,8 +391,8 @@
     let t = '<table class="tabla-h"><thead><tr><th>Pág.</th>' + (cfg.k > 0 ? '<th>H →</th>' : '') + (cfg.c > 0 ? '<th>C</th>' : '') + '</tr></thead><tbody>';
     st.decision.previo.forEach((x) => {
       const hmin = minH.indexOf(x.p) !== -1;
-      const cmin = minC.indexOf(x.p) !== -1 && (cfg.k === 0 || (minH.length > 1 && hmin));
-      t += '<tr class="' + (x.p === st.sale ? 'sale' : '') + '"><td class="pg">' + x.p + '</td>' +
+      const cmin = revelar && minC.indexOf(x.p) !== -1 && (cfg.k === 0 || (minH.length > 1 && hmin));
+      t += '<tr class="' + (revelar && x.p === st.sale ? 'sale' : '') + '"><td class="pg">' + x.p + '</td>' +
         (cfg.k > 0 ? '<td class="hd' + (hmin ? ' min' : '') + '">' + M.bitsATexto(x.H, cfg.k) + '</td>' : '') +
         (cfg.c > 0 ? '<td class="hd' + (cmin ? ' min' : '') + '">' + x.C + '</td>' : '') + '</tr>';
     });
@@ -457,14 +460,27 @@
     }
 
     // Reemplazo
-    cont.appendChild(el('p', 'titular', 'Sale la <span class="rojo">' + st.sale + '</span>.'));
-    if (hayBits()) cont.appendChild(desglose(st));
-
-    if (hayBits()) {
+    if (!hayBits()) {
+      cont.appendChild(el('p', 'titular', 'Sale la <span class="rojo">' + st.sale + '</span>.'));
+      return;
+    }
+    const revelar = E.revelado === st.indice || !!resp;
+    if (revelar) cont.appendChild(el('p', 'titular', 'Sale la <span class="rojo">' + st.sale + '</span>.'));
+    const fila = el('div', 'fila-desglose');
+    fila.appendChild(desglose(st, revelar));
+    if (!revelar) {
+      const b = el('button', 'btn flecha', '→');
+      b.type = 'button';
+      b.title = 'Mostrar qué página sale';
+      b.setAttribute('aria-label', 'Mostrar qué página sale');
+      b.addEventListener('click', () => { E.revelado = st.indice; renderDecision(true); });
+      fila.appendChild(b);
+    }
+    cont.appendChild(fila);
+    if (revelar) {
       const c = el('p', 'contraste', st.lruSacaria !== st.sale
         ? 'LRU puro habría sacado la ' + st.lruSacaria + ', la de abajo de la pila. Aquí los bits cambian la decisión.'
         : 'LRU puro habría sacado la misma.');
-      c.style.animationDelay = (animar ? st.decision.reglas.length * d * 0.9 : 0) + 'ms';
       cont.appendChild(c);
     }
   }
