@@ -13,6 +13,7 @@
   --rojo: #b3261e;         /* 6.6:1 */
   --verde: #1b6e3a;        /* 6.5:1 */
   --marca: #fff176;        /* resaltador del paso actual */
+  --marca-suave: #fff9c4;  /* pasos donde los bits y LRU puro difieren */
 
   /* Serif con números normales (Georgia los tiene "antiguos" y el 0 parece una o) */
   --serif: Charter, "Bitstream Charter", Cambria, "Sitka Text", "Times New Roman", serif;
@@ -230,6 +231,25 @@ select {
 .matriz .marca-f { color: var(--rojo); font-weight: bold; font-family: var(--serif); }
 .matriz .marca-a { color: var(--tachado); }
 .matriz .sale-v { color: var(--rojo); font-weight: bold; }
+
+/* Comparación con LRU puro (debajo de la matriz, al terminar) */
+#comparaLRU h3 { font-size: 1rem; margin: 0; }
+#comparaLRU .fila-titulo { margin: 22px 0 8px; }
+.vacio { color: var(--tenue); font-style: italic; font-size: 0.95rem; margin: 16px 0 0; padding: 12px 14px; border: 1px dashed var(--linea-suave); }
+.matriz td.distinto, .matriz th.distinto { background: var(--marca-suave); }
+.matriz td.distinto-borde { outline: 2px solid var(--linea); outline-offset: -2px; }
+.leyenda { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 0.85rem; color: var(--tenue); margin-top: 8px; }
+.leyenda i { display: inline-block; width: 14px; height: 14px; vertical-align: -2px; margin-right: 5px; border: 1px solid var(--linea-suave); }
+.leyenda i.dif { background: var(--marca-suave); }
+.leyenda i.borde { outline: 2px solid var(--linea); outline-offset: -2px; }
+.comparacion { margin-top: 16px; display: grid; gap: 4px; justify-items: start; }
+.tabla.tabla-comp { width: auto; min-width: min(360px, 100%); margin-bottom: 6px; }
+.frase-comp { margin: 0; font-size: 1.15rem; font-weight: bold; }
+.frase-comp.gana { color: var(--verde); }
+.frase-comp.pierde { color: var(--rojo); }
+.detalle-comp { margin: 0; font-size: 0.95rem; color: var(--tenue); }
+.aparece { animation: aparece-sube 600ms ease-out both; }
+@keyframes aparece-sube { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
 /* ---------- Resultados ---------- */
 .resultados h2 { margin-bottom: 6px; }

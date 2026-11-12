@@ -107,10 +107,30 @@
     <section class="tarjeta" aria-labelledby="tMatriz">
       <div class="fila-titulo">
         <h2 id="tMatriz">Matriz paso a paso</h2>
+        <span class="dato" id="matrizFallos"></span>
         <button class="btn derecha" id="btnCSV" type="button">Exportar CSV</button>
       </div>
       <div class="matriz-scroll">
         <table class="matriz" id="matriz"></table>
+      </div>
+
+      <!-- LRU puro: aparece cuando el algoritmo termina la secuencia -->
+      <div id="comparaLRU">
+        <p class="vacio" id="lruPendiente">La matriz de LRU puro aparece aquí cuando el algoritmo termine la secuencia.</p>
+        <div id="lruListo" hidden>
+          <div class="fila-titulo">
+            <h3 id="tLRU">LRU puro (misma secuencia)</h3>
+            <span class="dato" id="lruFallos"></span>
+          </div>
+          <div class="matriz-scroll">
+            <table class="matriz" id="matrizLRU" aria-labelledby="tLRU"></table>
+          </div>
+          <div class="leyenda">
+            <span><i class="dif"></i>uno falla y el otro acierta</span>
+            <span><i class="borde"></i>fila Fallo distinta</span>
+          </div>
+          <div class="comparacion" id="comparacion" aria-live="polite"></div>
+        </div>
       </div>
     </section>
 

@@ -22,7 +22,7 @@
   const E = {
     seq: [], semilla: null, profesor: false, revelado: -1,
     marcos: 3, modo: 'mia', k: 2, c: 2, orden: 'HCL',
-    pasos: [], paso: 0,
+    pasos: [], pasosLRU: [], paso: 0,
     jugando: false, timer: null, vel: 'normal'
   };
 
@@ -91,6 +91,7 @@
   }
   function recalcular(volverACero) {
     E.pasos = M.simulate(E.seq, E.marcos, 'LRU_BITS', config());
+    E.pasosLRU = M.simulate(E.seq, E.marcos, 'LRU');
     E.revelado = -1;
     if (volverACero) E.paso = 0;
     E.paso = Math.min(E.paso, E.pasos.length);
@@ -439,42 +440,108 @@
     return partes.join('·');
   }
 
-  function renderMatriz() {
-    const t = $('matriz');
-    const n = E.pasos.length;
-    const cls = (i) => 'col' + (i >= E.paso ? ' futuro' : '') + (i === E.paso - 1 ? ' actual' : '');
+  // ¿En el paso i uno de los dos algoritmos acierta y el otro falla?
+  function difiereDeLRU(i) { return E.pasos[i].acierto !== E.pasosLRU[i].acierto; }
+
+  /**
+   * Filas de una matriz paso a paso.
+   * pasos: resultado de simulate. hasta: columnas ya procesadas. conBits: mostrar H·C.
+   * clic: columnas clicables (solo la matriz principal). marcarDif: resaltar los pasos
+   * donde un algoritmo acierta y el otro falla.
+   */
+  function htmlMatriz(pasos, hasta, conBits, clic, marcarDif) {
+    const n = pasos.length;
+    const cls = (i) => (clic ? 'col' : '') + (i >= hasta ? ' futuro' : '') + (clic && i === hasta - 1 ? ' actual' : '') +
+      (marcarDif && difiereDeLRU(i) ? ' distinto' : '');
+    const di = (i) => clic ? ' data-i="' + i + '"' : '';
     let h = '<thead><tr><th scope="row">Referencia</th>';
-    for (let i = 0; i < n; i++) h += '<th scope="col" class="' + cls(i) + '" data-i="' + i + '">' + E.seq[i] + '</th>';
+    for (let i = 0; i < n; i++) h += '<th scope="col" class="' + cls(i) + '"' + di(i) + '>' + E.seq[i] + '</th>';
     h += '</tr></thead><tbody>';
     for (let j = 0; j < E.marcos; j++) {
       h += '<tr><th scope="row">Marco ' + (j + 1) + '</th>';
       for (let i = 0; i < n; i++) {
         let c = '';
         let extra = '';
-        if (i < E.paso) {
-          const st = E.pasos[i];
+        if (i < hasta) {
+          const st = pasos[i];
           const p = st.marcos[j];
           if (p !== null) {
-            c = '<span class="p">' + p + '</span>' + (hayBits() ? '<span class="hc">' + textoHC(st.bits[p]) + '</span>' : '');
+            c = '<span class="p">' + p + '</span>' + (conBits ? '<span class="hc">' + textoHC(st.bits[p]) + '</span>' : '');
             if (st.posicion === j) extra = st.acierto ? ' cambio-a' : ' cambio-f';
           }
         }
-        h += '<td class="celda ' + cls(i) + extra + '" data-i="' + i + '">' + c + '</td>';
+        h += '<td class="celda ' + cls(i) + extra + '"' + di(i) + '>' + c + '</td>';
       }
       h += '</tr>';
     }
     h += '<tr><th scope="row">Fallo</th>';
     for (let i = 0; i < n; i++) {
-      const v = i < E.paso ? (E.pasos[i].acierto ? '<span class="marca-a">·</span>' : '<span class="marca-f">F</span>') : '';
-      h += '<td class="' + cls(i) + '" data-i="' + i + '">' + v + '</td>';
+      const v = i < hasta ? (pasos[i].acierto ? '<span class="marca-a">·</span>' : '<span class="marca-f">F</span>') : '';
+      h += '<td class="' + cls(i) + (marcarDif && difiereDeLRU(i) ? ' distinto-borde' : '') + '"' + di(i) + '>' + v + '</td>';
     }
     h += '</tr><tr><th scope="row">Sale</th>';
     for (let i = 0; i < n; i++) {
-      const s = i < E.paso && E.pasos[i].sale !== null ? '<span class="sale-v">' + E.pasos[i].sale + '</span>' : '';
-      h += '<td class="' + cls(i) + '" data-i="' + i + '">' + s + '</td>';
+      const s = i < hasta && pasos[i].sale !== null ? '<span class="sale-v">' + pasos[i].sale + '</span>' : '';
+      h += '<td class="' + cls(i) + '"' + di(i) + '>' + s + '</td>';
     }
-    h += '</tr></tbody>';
-    t.innerHTML = h;
+    return h + '</tr></tbody>';
+  }
+
+  function listaPasos(arr) {
+    if (arr.length === 1) return 'el paso ' + arr[0];
+    return 'los pasos ' + arr.slice(0, -1).join(', ') + ' y ' + arr[arr.length - 1];
+  }
+
+  // Resumen bajo la matriz de LRU puro: fallos de cada uno, diferencia y en qué pasos.
+  function htmlComparacion(fMia, fLRU, n) {
+    const pct = (f) => Math.round((f / n) * 100) + ' %';
+    const evita = [], cuesta = [];
+    for (let i = 0; i < n; i++) {
+      if (E.pasos[i].acierto && !E.pasosLRU[i].acierto) evita.push(i + 1);
+      if (!E.pasos[i].acierto && E.pasosLRU[i].acierto) cuesta.push(i + 1);
+    }
+    const dif = fLRU - fMia;
+    const plural = (k) => k + (k === 1 ? ' fallo' : ' fallos');
+    let h = '<table class="tabla tabla-comp"><thead><tr><th></th><th>Fallos</th><th>% fallos</th><th>Aciertos</th></tr></thead><tbody>' +
+      '<tr class="mia"><td>Con bits</td><td class="num">' + fMia + '</td><td class="num">' + pct(fMia) + '</td><td class="num">' + (n - fMia) + '</td></tr>' +
+      '<tr><td>LRU puro</td><td class="num">' + fLRU + '</td><td class="num">' + pct(fLRU) + '</td><td class="num">' + (n - fLRU) + '</td></tr>' +
+      '</tbody></table>';
+    const frase = dif > 0 ? 'Los bits evitan ' + plural(dif) + ' frente a LRU puro (' + fMia + ' vs. ' + fLRU + ').'
+      : dif < 0 ? 'Los bits hacen ' + plural(-dif) + ' más que LRU puro (' + fMia + ' vs. ' + fLRU + ').'
+      : 'Empatan: los dos hacen ' + plural(fMia) + '.';
+    h += '<p class="frase-comp ' + (dif > 0 ? 'gana' : dif < 0 ? 'pierde' : '') + '">' + frase + '</p>';
+    if (evita.length) h += '<p class="detalle-comp">Los bits aciertan y LRU puro falla en ' + listaPasos(evita) + '.</p>';
+    if (cuesta.length) h += '<p class="detalle-comp">LRU puro acierta y los bits fallan en ' + listaPasos(cuesta) + '.</p>';
+    if (!evita.length && !cuesta.length) h += '<p class="detalle-comp">Aciertan y fallan en los mismos pasos.</p>';
+    return h;
+  }
+
+  function renderMatriz() {
+    const t = $('matriz');
+    const n = E.pasos.length;
+    const fin = n > 0 && E.paso >= n;
+    // Con "LRU puro" la comparación sería contra sí mismo: no se muestra.
+    const comparar = E.modo !== 'puro';
+    t.innerHTML = htmlMatriz(E.pasos, E.paso, hayBits(), true, fin && comparar);
+
+    const hechos = Math.min(E.paso, n);
+    const fMia = hechos ? E.pasos[hechos - 1].fallos : 0;
+    $('matrizFallos').textContent = 'Fallos: ' + fMia + ' · Aciertos: ' + (hechos - fMia);
+
+    $('comparaLRU').hidden = !comparar;
+    $('lruPendiente').hidden = fin;
+    const listo = $('lruListo');
+    if (comparar && fin) {
+      const recien = listo.hidden;
+      $('matrizLRU').innerHTML = htmlMatriz(E.pasosLRU, n, false, false, true);
+      const fLRU = E.pasosLRU[n - 1].fallos;
+      $('lruFallos').textContent = 'Fallos: ' + fLRU + ' · Aciertos: ' + (n - fLRU);
+      $('comparacion').innerHTML = htmlComparacion(fMia, fLRU, n);
+      listo.hidden = false;
+      if (recien && !reducirMovimiento) { listo.classList.remove('aparece'); void listo.offsetWidth; listo.classList.add('aparece'); }
+    } else {
+      listo.hidden = true;
+    }
 
     // mantener visible la columna actual (sin mover la página verticalmente)
     const act = t.querySelector('thead .actual');
