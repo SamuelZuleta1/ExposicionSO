@@ -409,7 +409,7 @@
       cont.appendChild(el('p', 'titular', 'Sale la <span class="rojo">' + st.sale + '</span>.'));
       return;
     }
-    const revelar = E.revelado === st.indice || !!resp;
+    const revelar = E.revelado === st.indice;
     if (revelar) cont.appendChild(el('p', 'titular', 'Sale la <span class="rojo">' + st.sale + '</span>.'));
     const fila = el('div', 'fila-desglose');
     fila.appendChild(desglose(st, revelar));
